@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { userAPI, apiCall } from '../utils/api';
 
+// TODO: Consider adding user preferences to state (theme, language, etc.)
+// TODO: Add session timeout handling
+// TODO: Implement refresh token functionality for better security
+
 // Initial state
 const initialState = {
     user: null,
@@ -8,6 +12,10 @@ const initialState = {
     isAuthenticated: false,
     loading: true,
     error: null,
+    // TODO: Add these fields later:
+    // preferences: { theme: 'light', language: 'en' },
+    // lastActivity: null,
+    // sessionExpiry: null,
 };
 
 // Action types
@@ -18,6 +26,10 @@ const actionTypes = {
     LOGOUT: 'LOGOUT',
     CLEAR_ERROR: 'CLEAR_ERROR',
     SET_LOADING: 'SET_LOADING',
+    // TODO: Add these action types:
+    // UPDATE_PROFILE: 'UPDATE_PROFILE',
+    // UPDATE_PREFERENCES: 'UPDATE_PREFERENCES',
+    // SESSION_EXPIRED: 'SESSION_EXPIRED',
 };
 
 // Reducer
@@ -32,6 +44,7 @@ const authReducer = (state, action) => {
                 error: null,
             };
         case actionTypes.AUTH_SUCCESS:
+            // TODO: Consider storing token in httpOnly cookie for better security
             localStorage.setItem('token', action.payload.token);
             return {
                 ...state,
@@ -40,6 +53,7 @@ const authReducer = (state, action) => {
                 isAuthenticated: true,
                 loading: false,
                 error: null,
+                // TODO: Set session expiry time
             };
         case actionTypes.AUTH_ERROR:
             localStorage.removeItem('token');
@@ -53,6 +67,7 @@ const authReducer = (state, action) => {
             };
         case actionTypes.LOGOUT:
             localStorage.removeItem('token');
+            // TODO: Also clear any other user-related data from localStorage
             return {
                 ...state,
                 token: null,
@@ -71,6 +86,7 @@ const authReducer = (state, action) => {
                 ...state,
                 loading: action.payload,
             };
+        // TODO: Add cases for UPDATE_PROFILE, UPDATE_PREFERENCES, SESSION_EXPIRED
         default:
             return state;
     }
@@ -83,9 +99,13 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [state, dispatch] = useReducer(authReducer, initialState);
 
+    // TODO: Add automatic session timeout check
+    // TODO: Add heartbeat to keep session alive during active use
+
     // Load user profile
     const loadUser = useCallback(async () => {
         try {
+            // TODO: Add retry logic for network failures
             const result = await apiCall(userAPI.getProfile);
             if (result.success) {
                 dispatch({
@@ -93,6 +113,7 @@ export const AuthProvider = ({ children }) => {
                     payload: result.data.data,
                 });
             } else {
+                // TODO: Handle different error types (network, auth, server)
                 dispatch({
                     type: actionTypes.AUTH_ERROR,
                     payload: result.error,
@@ -101,7 +122,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             dispatch({
                 type: actionTypes.AUTH_ERROR,
-                payload: 'Failed to load user',
+                payload: 'Failed to load user profile',
             });
         }
     }, []);
@@ -113,18 +134,23 @@ export const AuthProvider = ({ children }) => {
         } else {
             dispatch({ type: actionTypes.SET_LOADING, payload: false });
         }
-    }, [state.token, loadUser]); // Added dependencies
+    }, [state.token, loadUser]);
+
+    // TODO: Add useEffect for session timeout monitoring
 
     // Register user
     const register = async (userData) => {
         dispatch({ type: actionTypes.SET_LOADING, payload: true });
         try {
+            // TODO: Add client-side validation before API call
+            // TODO: Add password strength validation
             const result = await apiCall(userAPI.register, userData);
             if (result.success) {
                 dispatch({
                     type: actionTypes.AUTH_SUCCESS,
                     payload: result.data,
                 });
+                // TODO: Send welcome email or show onboarding
                 return { success: true };
             } else {
                 dispatch({
@@ -146,12 +172,15 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         dispatch({ type: actionTypes.SET_LOADING, payload: true });
         try {
+            // TODO: Add remember me functionality
+            // TODO: Add rate limiting protection
             const result = await apiCall(userAPI.login, credentials);
             if (result.success) {
                 dispatch({
                     type: actionTypes.AUTH_SUCCESS,
                     payload: result.data,
                 });
+                // TODO: Log login activity for security monitoring
                 return { success: true };
             } else {
                 dispatch({
@@ -171,6 +200,8 @@ export const AuthProvider = ({ children }) => {
 
     // Logout user
     const logout = () => {
+        // TODO: Call logout API endpoint to invalidate server-side session
+        // TODO: Add logout confirmation for unsaved changes
         dispatch({ type: actionTypes.LOGOUT });
     };
 
@@ -178,6 +209,12 @@ export const AuthProvider = ({ children }) => {
     const clearError = () => {
         dispatch({ type: actionTypes.CLEAR_ERROR });
     };
+
+    // TODO: Add these functions:
+    // const updateProfile = async (profileData) => { ... };
+    // const changePassword = async (passwordData) => { ... };
+    // const updatePreferences = (preferences) => { ... };
+    // const checkSessionExpiry = () => { ... };
 
     return (
         <AuthContext.Provider
@@ -188,6 +225,10 @@ export const AuthProvider = ({ children }) => {
                 logout,
                 clearError,
                 loadUser,
+                // TODO: Add new functions when implemented:
+                // updateProfile,
+                // changePassword,
+                // updatePreferences,
             }}
         >
             {children}
